@@ -1,12 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Callable, Iterable, List, Optional
-
-import spacy
-from spacy.util import minibatch
-from tqdm.auto import tqdm
-from transformers import MarianMTModel, MarianTokenizer
-
-from ..types import Example, Span, Token
+from typing import Iterable, List, Optional
 
 
 class BaseTranslator(ABC):
@@ -32,7 +25,7 @@ class BaseTranslator(ABC):
             str: Translated text in target language
         """
         return list(self.pipe([text]))[0]
-    
+
     def pipe(self, texts: List[str], batch_size: Optional[int] = 8) -> Iterable[str]:
         return self._predict(texts, batch_size)
 

@@ -4,6 +4,7 @@ import srsly
 from wasabi import msg
 
 from ..translate import AzureTranslator, GoogleTranslator, TransformersMarianTranslator
+from ..translate.base import BaseTranslator
 from ..translate.core import translate_ner_batch
 from ..types import Example, Task, Translator
 
@@ -13,12 +14,12 @@ def translate(
     output_path: Path,
     source_lang: str,
     target_lang: str,
-    translator: Translator, 
+    translator_class: Translator,
     model_name_or_path: str = None,
     force: bool = False,
     task: Task = Task.NER,
     api_key: str = None,
-    translate_url: str = None
+    translate_url: str = None,
 ) -> None:
     """Translate dataset
 
@@ -53,11 +54,25 @@ def translate(
 
     msg.text(f"Translating examples.")
 
-    if translator == Translator.AZURE:
+    translator: BaseTranslator
+
+    if translator_class == Translator.AZURE:
+        if not api_key:
+            raise ValueError(
+                "No api_key provided. Make sure to provide a valid API key for the Microsoft Translator API."
+            )
         translator = AzureTranslator(api_key, source_lang=source_lang, target_lang=target_lang)
-    elif translator == Translator.GOOGLE:
+    elif translator_class == Translator.GOOGLE:
+        if not api_key:
+            raise ValueError(
+                "No api_key provided. Make sure to provide a valid API key for the Google Cloud Translation API."
+            )
         translator = GoogleTranslator(api_key, source_lang=source_lang, target_lang=target_lang)
     else:
+        if not model_name_or_path:
+            raise ValueError(
+                "No model_name_or_path provided. Using Transformers based pipeline so make sure to provide a valid model. e.g. Helsinki-NLP/opus_mt_en_ROMANCE"
+            )
         translator = TransformersMarianTranslator(
             model_name_or_path, source_lang=source_lang, target_lang=target_lang
         )

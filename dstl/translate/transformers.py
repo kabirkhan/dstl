@@ -1,15 +1,13 @@
-from typing import Callable, Iterable, List, Optional
+from typing import Iterable, List, Optional
 
-import spacy
 from spacy.util import minibatch
 from tqdm.auto import tqdm
 from transformers import MarianMTModel, MarianTokenizer
 
 from .base import BaseTranslator
-from ..types import Example, Span, Token
 
 
-class TransformersMarianTranslator:
+class TransformersMarianTranslator(BaseTranslator):
     """TransformersMarianTranslator uses the MarianMTModel from the transformers project
     to translate text to/from any supported model in Marian MT."""
 
