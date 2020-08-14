@@ -1,6 +1,6 @@
 """DataSet TransLation (DSTL) provides utilities to translate annotated natural language data from one language to another."""
 
-__version__ = "0.0.1"
+__version__ = "0.0.2"
 
 from .translate import TransformersMarianTranslator
 from .translate.core import translate_ner_batch

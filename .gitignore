@@ -13,3 +13,4 @@ htmlcov
 **/.ipynb_checkpoints
 **/.pytest_cache
 .pytest_cache
+examples/fixed_data
