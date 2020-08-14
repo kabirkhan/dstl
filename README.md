@@ -1,3 +1,3 @@
-# Prodigy Translate
+# DataSet TransLation (DSTL)
 
-Recipes to translate annotated Prodigy datasets to different languages
+DataSet TransLation (DSTL) provides utilities to translate annotated natural language data from one language to another.
