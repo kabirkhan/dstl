@@ -63,12 +63,12 @@ class TransformersMarianTranslator:
         """
         prefix = f">>{self.target_lang}<< "
         texts = [prefix + text for text in texts]
-        with tqdm(total=len(examples)) as pbar:
+        with tqdm(total=len(texts)) as pbar:
             for batch in minibatch(texts, batch_size):
                 encoded_inputs = self.tokenizer.prepare_translation_batch(batch)
                 translated = self.model.generate(**encoded_inputs)
                 tgt_text = [self.tokenizer.decode(t, skip_special_tokens=True) for t in translated]
-                yield tgt_texts
+                yield from tgt_texts
                 pbar.update(batch_size)
 
 
@@ -141,24 +141,24 @@ def translate_ner_batch(
     """
 
     with tqdm(total=len(examples)) as pbar:
-        for batch in minibatch(examples, batch_size):
-            offsets = [0]
-            texts_to_translate = []
+        offsets = [0]
+        texts_to_translate = []
 
-            for example in batch:
-                example_texts = [example.text] + [s.text for s in example.spans]
-                texts_to_translate += example_texts
-                offsets.append(offsets[-1] + len(example_texts))
+        for example in examples:
+            example_texts = [example.text] + [s.text for s in example.spans]
+            texts_to_translate += example_texts
+            offsets.append(offsets[-1] + len(example_texts))
 
-            translated_texts = translate_f(texts_to_translate)
-            for i in range(1, len(offsets)):
-                orig_example = batch[i - 1]
-                e_texts_t = translated_texts[offsets[i - 1] : offsets[i]]
-                example_text_t = e_texts_t[0]
-                span_texts_t = e_texts_t[1:]
-                example_t = match_example(
-                    target_lang, example_text_t, span_texts_t, orig_example.spans, case_sensitive
-                )
+        translated_texts = translate_f(texts_to_translate, batch_size=batch_size)
 
-                yield example_t
-                pbar.update(1)
+        for i in tqdm(range(1, len(offsets))):
+            orig_example = batch[i - 1]
+            e_texts_t = translated_texts[offsets[i - 1] : offsets[i]]
+            example_text_t = e_texts_t[0]
+            span_texts_t = e_texts_t[1:]
+            example_t = match_example(
+                target_lang, example_text_t, span_texts_t, orig_example.spans, case_sensitive
+            )
+
+            yield example_t
+            pbar.update(1)
