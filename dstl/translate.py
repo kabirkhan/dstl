@@ -1,4 +1,4 @@
-from typing import Any, Callable, Dict, Iterable, List
+from typing import Callable, Iterable, List
 
 import spacy
 from spacy.util import minibatch
@@ -11,9 +11,8 @@ from .types import Example, Span, Token
 class TransformersMarianTranslator:
     """TransformersMarianTranslator uses the MarianMTModel from the transformers project
     to translate text to/from any supported model in Marian MT."""
-    def __init__(
-        self, model_name_or_path: str, source_lang: str = None, target_lang: str = None
-    ):
+
+    def __init__(self, model_name_or_path: str, source_lang: str = None, target_lang: str = None):
         """Initialize an instance of TransformersMarianTranslator
 
         Args:
@@ -25,7 +24,7 @@ class TransformersMarianTranslator:
         Raises:
             ValueError: Target language is ambiguous given the model and no target_lang 
                 is directly specified.
-        """        
+        """
         self.tokenizer = MarianTokenizer.from_pretrained(model_name_or_path)
         self.model = MarianMTModel.from_pretrained(model_name_or_path)
         self.source_lang = source_lang
@@ -49,7 +48,7 @@ class TransformersMarianTranslator:
 
         Returns:
             str: Translated text in target language
-        """        
+        """
         return self.pipe([text])[0]
 
     def pipe(self, texts: Iterable[str], batch_size: int = 8) -> Iterable[str]:
@@ -62,25 +61,37 @@ class TransformersMarianTranslator:
         Returns:
             Iterable[str]: Translated texts in target language
         """
-        with tqdm(total=len(examples)) as pbar:
-        for batch in minibatch(examples, batch_size):
         prefix = f">>{self.target_lang}<< "
         texts = [prefix + text for text in texts]
-        encoded_inputs = self.tokenizer.prepare_translation_batch(texts)
-        translated = self.model.generate(**encoded_inputs)
-        tgt_text = [
-            self.tokenizer.decode(t, skip_special_tokens=True) for t in translated
-        ]
-        return tgt_text
+        with tqdm(total=len(examples)) as pbar:
+            for batch in minibatch(texts, batch_size):
+                encoded_inputs = self.tokenizer.prepare_translation_batch(batch)
+                translated = self.model.generate(**encoded_inputs)
+                tgt_text = [self.tokenizer.decode(t, skip_special_tokens=True) for t in translated]
+                yield tgt_texts
+                pbar.update(batch_size)
 
 
-def match_example(lang: str, text: str, span_texts: List[str], spans: List[Span], case_sensitive: bool = True) -> Example:
+def match_example(
+    lang: str, text: str, span_texts: List[str], spans: List[Span], case_sensitive: bool = True
+) -> Example:
+    """Match Example with provided spans using spaCy EntityRuler
+
+    Args:
+        lang (str): Target spaCy language 
+        text (str): Example to text to match
+        span_texts (List[str]): Span text to identify in text
+        spans (List[Span]): Original spans in source language
+        case_sensitive (bool, optional): Consider case during matching.
+
+    Returns:
+        Example: Tokenized Example in target language with spans set correctly
+    """    
     nlp = spacy.blank(lang)
-    ruler = nlp.create_pipe("entity_ruler", {"phrase_matcher_attr": "ORTH" if case_sensitive else "LOWER"})
-    patterns = [
-        {"label": s.label, "pattern": st_text}
-        for s, st_text in zip(spans, span_texts)
-    ]
+    ruler = nlp.create_pipe(
+        "entity_ruler", {"phrase_matcher_attr": "ORTH" if case_sensitive else "LOWER"}
+    )
+    patterns = [{"label": s.label, "pattern": st_text} for s, st_text in zip(spans, span_texts)]
 
     ruler.add_patterns(patterns)
     nlp.add_pipe(ruler)
@@ -110,7 +121,7 @@ def translate_ner_batch(
     target_lang: str,
     case_sensitive: bool = True,
     batch_size: int = 8,
-    show_progress: bool = True
+    show_progress: bool = True,
 ) -> Iterable[Example]:
     """Translate a batch of labeled Named Entity Recognition (NER) examples in the into `target_lang`
 
@@ -133,7 +144,7 @@ def translate_ner_batch(
         for batch in minibatch(examples, batch_size):
             offsets = [0]
             texts_to_translate = []
-            
+
             for example in batch:
                 example_texts = [example.text] + [s.text for s in example.spans]
                 texts_to_translate += example_texts
@@ -141,11 +152,13 @@ def translate_ner_batch(
 
             translated_texts = translate_f(texts_to_translate)
             for i in range(1, len(offsets)):
-                orig_example = batch[i-1]
-                e_texts_t = translated_texts[offsets[i-1]:offsets[i]]
+                orig_example = batch[i - 1]
+                e_texts_t = translated_texts[offsets[i - 1] : offsets[i]]
                 example_text_t = e_texts_t[0]
                 span_texts_t = e_texts_t[1:]
-                example_t = match_example(target_lang, example_text_t, span_texts_t, orig_example.spans, case_sensitive)
-                
+                example_t = match_example(
+                    target_lang, example_text_t, span_texts_t, orig_example.spans, case_sensitive
+                )
+
                 yield example_t
                 pbar.update(1)

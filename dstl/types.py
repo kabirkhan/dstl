@@ -1,7 +1,7 @@
 from enum import Enum
-from typing import Any, Callable, Dict, List, NamedTuple, Optional, Tuple, cast
+from typing import Any, Dict, List, Optional
 
-from pydantic import BaseModel, Extra, root_validator
+from pydantic import BaseModel, root_validator
 
 
 class Task(str, Enum):

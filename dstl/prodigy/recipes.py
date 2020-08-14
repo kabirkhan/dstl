@@ -2,8 +2,7 @@ from typing import List
 
 import prodigy
 from prodigy.core import connect
-from prodigy.types import SpansManualTask
-from prodigy.util import log, set_hashes, split_string
+from prodigy.util import set_hashes, split_string
 from tqdm.auto import tqdm
 from wasabi import msg
 
@@ -14,7 +13,12 @@ from ..translate import HFMarianMTTranslator, translate_ner
     "ner.translate",
     in_sets=("Comma-separated datasets to merge", "positional", None, split_string),
     out_set=("Name of new dataset for merged data", "positional", None, str),
-    model_name_or_path=("Model name or path of MarianMT based model using HuggingFace Transformers", "positional", None, str),
+    model_name_or_path=(
+        "Model name or path of MarianMT based model using HuggingFace Transformers",
+        "positional",
+        None,
+        str,
+    ),
     source_lang=("Source language for translation", "option", "sl", str),
     target_lang=("Target language for translation", "option", "tl", str),
     dry=("Perform a dry run", "flag", "D", bool),
@@ -27,7 +31,9 @@ def ner_translate(
     target_lang: str = None,
     dry: bool = False,
 ):
-    translator = HFMarianMTTranslator(model_name_or_path, source_lang=source_lang, target_lang=target_lang)
+    translator = HFMarianMTTranslator(
+        model_name_or_path, source_lang=source_lang, target_lang=target_lang
+    )
 
     DB = connect()
     for set_id in in_sets:
@@ -57,9 +63,11 @@ def ner_translate(
                 mismatched_examples_t.append(e_t)
             else:
                 examples_t.append(e_t)
-        
+
         msg.text(f"RECIPE: Translated {len(examples_t)} examples from '{set_id}'")
-        msg.text(f"RECIPE: Found {len(mismatched_examples_t)} examples with mismatched spans after translation from '{set_id}'")
+        msg.text(
+            f"RECIPE: Found {len(mismatched_examples_t)} examples with mismatched spans after translation from '{set_id}'"
+        )
 
     examples_t = set_hashes(examples_t)
 
@@ -70,4 +78,3 @@ def ner_translate(
         f"Translated and merged {len(examples_t)} examples from {len(in_sets)} datasets",
         f"Created translated and merged dataset '{out_set}'",
     )
-    

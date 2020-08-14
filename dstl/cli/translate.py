@@ -1,4 +1,5 @@
 from pathlib import Path
+
 import srsly
 from wasabi import msg
 
@@ -6,7 +7,15 @@ from ..translate import HFMarianMTTranslator, translate_ner_batch
 from ..types import Example, Task
 
 
-def translate(input_path: Path, model_name_or_path: str, source_lang: str, target_lang: str, output_path: Path = None, force: bool = False, task: Task = Task.NER) -> None:
+def translate(
+    input_path: Path,
+    model_name_or_path: str,
+    source_lang: str,
+    target_lang: str,
+    output_path: Path = None,
+    force: bool = False,
+    task: Task = Task.NER,
+) -> None:
     """Translate dataset
 
     Args:
@@ -18,15 +27,17 @@ def translate(input_path: Path, model_name_or_path: str, source_lang: str, targe
         force (bool): Force output overwrite and creation.
         task (Task): NLP Task format of the data. 
             e.g. "NER", "Classification". Currently, only "NER" is supported
-    """    
+    """
 
     if input_path.suffix != ".jsonl":
         raise ValueError("Only accepting JSONL data in the Prodigy Annotation format.")
 
     if output_path and not output_path.exists():
         if output_path.is_file() and not force:
-            raise ValueError("Output path already exists. To overwrite add the flag --force to your command")
-            
+            raise ValueError(
+                "Output path already exists. To overwrite add the flag --force to your command"
+            )
+
         output_path.parent.mkdir(exist_ok=True, parents=True)
 
     msg.text("Loading input examples")
@@ -38,10 +49,11 @@ def translate(input_path: Path, model_name_or_path: str, source_lang: str, targe
 
     msg.text(f"Translating examples.")
 
-    translator = HFMarianMTTranslator(model_name_or_path, source_lang=source_lang, target_lang=target_lang)
+    translator = HFMarianMTTranslator(
+        model_name_or_path, source_lang=source_lang, target_lang=target_lang
+    )
     examples_t = translate_ner_batch(examples, translator.pipe, target_lang)
 
     # msg.good(f"Successfully translated {len(examples_t)} examples")
 
     srsly.write_jsonl(output_path, (e.dict() for e in examples_t))
-    
