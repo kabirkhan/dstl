@@ -1,0 +1,86 @@
+[build-system]
+requires = ["flit_core >=2,<4"]
+build-backend = "flit_core.buildapi"
+
+[tool.flit.metadata]
+module = "dstl"
+author = "Kabir Khan"
+author-email = "kabirkhan1137@outlook.com"
+home-page = "https://github.com/kabirkhan/dstl"
+classifiers = [
+    "Intended Audience :: Information Technology",
+    "Intended Audience :: System Administrators",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python",
+    "Topic :: Software Development :: Libraries :: Application Frameworks",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Software Development :: Libraries",
+    "Topic :: Software Development",
+    "Typing :: Typed",
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.6",
+    "Programming Language :: Python :: 3.7",
+    "Programming Language :: Python :: 3.8",
+    "License :: OSI Approved :: MIT License"
+]
+
+requires = [
+    "torch >=1.6.0,<1.7.0",
+    "transformers >=3.0.0,<3.1.0",
+    "typer >=0.3.1,<1.0"
+]
+description-file = "README.md"
+requires-python = ">=3.6"
+
+[tool.flit.metadata.requires-extra]
+dev = [
+    "jupyterlab >= 1.2.0, <1.3",
+    "ipywidgets",
+    "autoflake >=1.3.1,<2.0.0",
+    "flake8 >=3.8.3,<4.0.0"
+]
+test = [
+    "pytest == 5.3.0",
+    "pytest-cov",
+    "coverage",
+    "pytest-xdist",
+    "pytest-sugar",
+    "mypy",
+    "black",
+    "isort"
+]
+doc = [
+    "mkdocs >=1.1.2,<2.0.0",
+    "mkdocs-material >=5.4.0,<6.0.0",
+    "markdown-include >=0.5.1,<0.6.0",
+    "mkdocstrings"
+]
+all = [
+    "colorama",
+    "click-completion"
+]
+
+[tool.flit.scripts]
+dstl = "dstl.cli:app"
+
+[tool.flit.entrypoints."prodigy_recipes"]
+"ner.translate" = "dstl:prodigy_recipes.ner_translate"
+
+[tool.black]
+line-length = 100
+target-version = ['py36']
+include = '\.pyi?$'
+exclude = '''
+/(
+    \.git
+  | \.venv
+  | docker
+)/
+'''
+
+[tool.isort]
+profile = "black"
+known_third_party = ["recon"]

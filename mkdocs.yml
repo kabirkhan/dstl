@@ -1,0 +1,57 @@
+site_name: DSTL
+site_description: DataSet TransLation (DSTL) provides utilities to translate annotated natural language data from one language to another.
+site_url: https://kabirkhan.github.io/dstl/
+
+theme:
+    name: 'material'
+    palette:
+        primary: 'blue'
+        accent: 'blue'
+    icon:
+        repo: 'fontawesome/brands/github-alt'
+    logo: 'img/drone-white.svg'
+    favicon: 'img/favicon.ico'
+    custom_dir: docs/overrides
+
+repo_name: 'kabirkhan/dstl'
+repo_url: 'https://github.com/kabirkhan/dstl'
+edit_uri: 'https://github.com/kabirkhan/dstl/tree/master/docs'
+
+nav:
+    - DSTL: 'index.md'
+    - Release Notes: release-notes.md
+
+markdown_extensions:
+    - toc:
+        permalink: true
+    - markdown.extensions.codehilite:
+        guess_lang: false
+    - markdown_include.include:
+        base_path: docs
+    - admonition
+    - codehilite
+    - extra
+    - pymdownx.superfences:
+        custom_fences:
+            - name: mermaid
+              class: mermaid
+              format: !!python/name:pymdownx.superfences.fence_div_format
+
+plugins:
+  - mkdocstrings
+
+extra:
+    social:
+        - icon: 'fontawesome/brands/github-alt'
+          link: 'https://github.com/kabirkhan/dstl'
+        - icon: 'fontawesome/brands/twitter'
+          link: 'https://twitter.com/kabir_khan14'
+
+extra_css:
+    - 'css/termynal.css'
+    - 'css/custom.css'
+
+extra_javascript:
+    - 'js/termynal.js'
+    - 'https://unpkg.com/mermaid@8.4.6/dist/mermaid.min.js'
+    - 'js/custom.js'
