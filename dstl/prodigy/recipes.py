@@ -5,7 +5,8 @@ from prodigy.core import connect
 from prodigy.util import set_hashes, split_string
 from wasabi import msg
 
-from ..translate import TransformersMarianTranslator, translate_ner_batch
+from ..translate import TransformersMarianTranslator
+from ..translate.core import translate_ner_batch
 from ..types import Example
 
 

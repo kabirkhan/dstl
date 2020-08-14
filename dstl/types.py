@@ -8,6 +8,12 @@ class Task(str, Enum):
     NER = "NER"
 
 
+class Translator(str, Enum):
+    AZURE = "azure"
+    GOOGLE = "google"
+    TRANSFORMERS = "transformers"
+
+
 class Span(BaseModel):
     """Entity Span in Example"""
 

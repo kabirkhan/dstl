@@ -2,7 +2,8 @@
 
 __version__ = "0.0.1"
 
-from .translate import TransformersMarianTranslator, translate_ner_batch
+from .translate import TransformersMarianTranslator
+from .translate.core import translate_ner_batch
 
 try:
     # This needs to be imported in order for the entry points to be loaded

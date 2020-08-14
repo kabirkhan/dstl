@@ -3,18 +3,22 @@ from pathlib import Path
 import srsly
 from wasabi import msg
 
-from ..translate import TransformersMarianTranslator, translate_ner_batch
-from ..types import Example, Task
+from ..translate import AzureTranslator, GoogleTranslator, TransformersMarianTranslator
+from ..translate.core import translate_ner_batch
+from ..types import Example, Task, Translator
 
 
 def translate(
     input_path: Path,
-    model_name_or_path: str,
+    output_path: Path,
     source_lang: str,
     target_lang: str,
-    output_path: Path = None,
+    translator: Translator, 
+    model_name_or_path: str = None,
     force: bool = False,
     task: Task = Task.NER,
+    api_key: str = None,
+    translate_url: str = None
 ) -> None:
     """Translate dataset
 
@@ -49,9 +53,15 @@ def translate(
 
     msg.text(f"Translating examples.")
 
-    translator = TransformersMarianTranslator(
-        model_name_or_path, source_lang=source_lang, target_lang=target_lang
-    )
+    if translator == Translator.AZURE:
+        translator = AzureTranslator(api_key, source_lang=source_lang, target_lang=target_lang)
+    elif translator == Translator.GOOGLE:
+        translator = GoogleTranslator(api_key, source_lang=source_lang, target_lang=target_lang)
+    else:
+        translator = TransformersMarianTranslator(
+            model_name_or_path, source_lang=source_lang, target_lang=target_lang
+        )
+
     examples_t = translate_ner_batch(examples, translator.pipe, target_lang)
 
     srsly.write_jsonl(output_path, (e.dict() for e in examples_t))
