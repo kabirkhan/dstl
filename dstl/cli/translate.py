@@ -3,7 +3,7 @@ from pathlib import Path
 import srsly
 from wasabi import msg
 
-from ..translate import HFMarianMTTranslator, translate_ner_batch
+from ..translate import TransformersMarianTranslator, translate_ner_batch
 from ..types import Example, Task
 
 
@@ -49,11 +49,9 @@ def translate(
 
     msg.text(f"Translating examples.")
 
-    translator = HFMarianMTTranslator(
+    translator = TransformersMarianTranslator(
         model_name_or_path, source_lang=source_lang, target_lang=target_lang
     )
     examples_t = translate_ner_batch(examples, translator.pipe, target_lang)
-
-    # msg.good(f"Successfully translated {len(examples_t)} examples")
 
     srsly.write_jsonl(output_path, (e.dict() for e in examples_t))

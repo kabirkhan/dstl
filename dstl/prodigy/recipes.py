@@ -3,10 +3,10 @@ from typing import List
 import prodigy
 from prodigy.core import connect
 from prodigy.util import set_hashes, split_string
-from tqdm.auto import tqdm
 from wasabi import msg
 
-from ..translate import HFMarianMTTranslator, translate_ner
+from ..translate import TransformersMarianTranslator, translate_ner_batch
+from ..types import Example
 
 
 @prodigy.recipe(
@@ -27,11 +27,11 @@ def ner_translate(
     in_sets: List[str],
     out_set: str,
     model_name_or_path: str,
-    source_lang: str = None,
-    target_lang: str = None,
+    source_lang: str,
+    target_lang: str,
     dry: bool = False,
-):
-    translator = HFMarianMTTranslator(
+) -> None:
+    translator = TransformersMarianTranslator(
         model_name_or_path, source_lang=source_lang, target_lang=target_lang
     )
 
@@ -50,31 +50,33 @@ def ner_translate(
             DB.add_dataset(out_set)
         msg.good(f"Created dataset '{out_set}'")
 
-    examples_t = []
+    matched_examples_t = []
     mismatched_examples_t = []
 
     for set_id in in_sets:
         msg.text(f"RECIPE: Translating and merging examples from '{set_id}'")
-        examples = DB.get_dataset(set_id)
-        for e in tqdm(examples[:20]):
-            e_t = translate_ner(e, translate_f=translator.pipe, target_lang=target_lang)
-
-            if len(e["spans"]) != len(e_t["spans"]):
+        raw_examples = DB.get_dataset(set_id)
+        examples = [Example(**e) for e in raw_examples]
+        examples_t = translate_ner_batch(
+            examples, translate_f=translator.pipe, target_lang=target_lang
+        )
+        for e, e_t in zip(examples, examples_t):
+            if len(e.spans) != len(e_t.spans):
                 mismatched_examples_t.append(e_t)
             else:
-                examples_t.append(e_t)
+                matched_examples_t.append(e_t)
 
-        msg.text(f"RECIPE: Translated {len(examples_t)} examples from '{set_id}'")
+        msg.text(f"RECIPE: Translated {len(matched_examples_t)} examples from '{set_id}'")
         msg.text(
             f"RECIPE: Found {len(mismatched_examples_t)} examples with mismatched spans after translation from '{set_id}'"
         )
 
-    examples_t = set_hashes(examples_t)
+    matched_examples_t = set_hashes(matched_examples_t)
 
     dry = False
     if not dry:
-        DB.add_examples(examples_t, datasets=[out_set])
+        DB.add_examples(matched_examples_t, datasets=[out_set])
     msg.good(
-        f"Translated and merged {len(examples_t)} examples from {len(in_sets)} datasets",
+        f"Translated and merged {len(matched_examples_t)} examples from {len(in_sets)} datasets",
         f"Created translated and merged dataset '{out_set}'",
     )

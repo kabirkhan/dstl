@@ -1,4 +1,4 @@
-from typing import Callable, Iterable, List
+from typing import Callable, Iterable, List, Optional
 
 import spacy
 from spacy.util import minibatch
@@ -12,7 +12,7 @@ class TransformersMarianTranslator:
     """TransformersMarianTranslator uses the MarianMTModel from the transformers project
     to translate text to/from any supported model in Marian MT."""
 
-    def __init__(self, model_name_or_path: str, source_lang: str = None, target_lang: str = None):
+    def __init__(self, model_name_or_path: str, source_lang: str, target_lang: str):
         """Initialize an instance of TransformersMarianTranslator
 
         Args:
@@ -30,15 +30,15 @@ class TransformersMarianTranslator:
         self.source_lang = source_lang
         self.target_lang = target_lang
 
-        source_langs = self.tokenizer.init_kwargs["source_lang"].split("+")
-        if len(source_langs) == 1:
-            self.source_lang = source_langs[0]
+        # source_langs = self.tokenizer.init_kwargs["source_lang"].split("+")
+        # if len(source_langs) == 1:
+        #     self.source_lang = source_langs[0]
 
-        target_langs = self.tokenizer.init_kwargs["target_lang"].split("+")
-        if len(target_langs) > 1 and not self.target_lang:
-            raise ValueError("Please provide a target language.")
-        elif len(target_langs) == 1:
-            self.target_lang = target_langs[0]
+        # target_langs = self.tokenizer.init_kwargs["target_lang"].split("+")
+        # if len(target_langs) > 1 and not self.target_lang:
+        #     raise ValueError("Please provide a target language.")
+        # elif len(target_langs) == 1:
+        #     self.target_lang = target_langs[0]
 
     def __call__(self, text: str) -> str:
         """Translate a single text document
@@ -49,9 +49,9 @@ class TransformersMarianTranslator:
         Returns:
             str: Translated text in target language
         """
-        return self.pipe([text])[0]
+        return list(self.pipe([text]))[0]
 
-    def pipe(self, texts: Iterable[str], batch_size: int = 8) -> Iterable[str]:
+    def pipe(self, texts: List[str], batch_size: Optional[int] = 8) -> Iterable[str]:
         """Translate a batch of text documents
 
         Args:
@@ -67,7 +67,7 @@ class TransformersMarianTranslator:
             for batch in minibatch(texts, batch_size):
                 encoded_inputs = self.tokenizer.prepare_translation_batch(batch)
                 translated = self.model.generate(**encoded_inputs)
-                tgt_text = [self.tokenizer.decode(t, skip_special_tokens=True) for t in translated]
+                tgt_texts = [self.tokenizer.decode(t, skip_special_tokens=True) for t in translated]
                 yield from tgt_texts
                 pbar.update(batch_size)
 
@@ -86,7 +86,7 @@ def match_example(
 
     Returns:
         Example: Tokenized Example in target language with spans set correctly
-    """    
+    """
     nlp = spacy.blank(lang)
     ruler = nlp.create_pipe(
         "entity_ruler", {"phrase_matcher_attr": "ORTH" if case_sensitive else "LOWER"}
@@ -117,7 +117,7 @@ def match_example(
 
 def translate_ner_batch(
     examples: Iterable[Example],
-    translate_f: Callable[[Iterable[str]], Iterable[str]],
+    translate_f: Callable[[List[str], Optional[int]], Iterable[str]],
     target_lang: str,
     case_sensitive: bool = True,
     batch_size: int = 8,
@@ -139,6 +139,7 @@ def translate_ner_batch(
     Returns:
         Iterable[Example]: Examples translated and tokenized in `target_lang`
     """
+    examples = list(examples)
 
     with tqdm(total=len(examples)) as pbar:
         offsets = [0]
@@ -149,10 +150,10 @@ def translate_ner_batch(
             texts_to_translate += example_texts
             offsets.append(offsets[-1] + len(example_texts))
 
-        translated_texts = translate_f(texts_to_translate, batch_size=batch_size)
+        translated_texts = list(translate_f(texts_to_translate, batch_size))
 
         for i in tqdm(range(1, len(offsets))):
-            orig_example = batch[i - 1]
+            orig_example = examples[i - 1]
             e_texts_t = translated_texts[offsets[i - 1] : offsets[i]]
             example_text_t = e_texts_t[0]
             span_texts_t = e_texts_t[1:]
